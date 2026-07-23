@@ -16,6 +16,11 @@
         </div>
     </div>
 
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+
     @if (notifications == null)
     {
         <p><em>Loading...</em></p>
@@ -82,6 +87,7 @@
 @code {
     private List<Notification>? notifications;
     private int currentUserId = 0;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -107,23 +113,33 @@
 
     private async Task MarkAsRead(int notificationId)
     {
-        if (currentUserId > 0)
-        {
-            await NotificationService.MarkAsReadAsync(notificationId, currentUserId);
-            await LoadNotifications();
-        }
+        if (currentUserId <= 0)
+            return;
+
+        var marked = await NotificationService.MarkAsReadAsync(notificationId, currentUserId);
+        errorMessage = marked
+            ? null
+            : "Unable to mark the notification as read. It may no longer exist.";
+        await LoadNotifications();
     }
 
     private async Task MarkAllAsRead()
     {
-        if (notifications != null && currentUserId > 0)
+        if (notifications == null || currentUserId <= 0)
+            return;
+
+        var anyFailed = false;
+        foreach (var notification in notifications.Where(n => !n.IsRead))
         {
-            foreach (var notification in notifications.Where(n => !n.IsRead))
-            {
-                await NotificationService.MarkAsReadAsync(notification.NotificationId, currentUserId);
-            }
-            await LoadNotifications();
+            var marked = await NotificationService.MarkAsReadAsync(notification.NotificationId, currentUserId);
+            if (!marked)
+                anyFailed = true;
         }
+
+        errorMessage = anyFailed
+            ? "Some notifications could not be marked as read."
+            : null;
+        await LoadNotifications();
     }
 
     private string GetPriorityColor(NotificationPriority priority)

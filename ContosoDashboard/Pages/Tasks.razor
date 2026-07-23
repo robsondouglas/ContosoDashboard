@@ -50,6 +50,11 @@
         </div>
     </div>
 
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+
     <!-- Tasks List -->
     @if (tasks == null)
     {
@@ -140,6 +145,7 @@
     private string filterStatus = "";
     private string filterPriority = "";
     private int currentUserId = 0;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -173,11 +179,21 @@
 
     private async Task UpdateTaskStatus(int taskId, Models.TaskStatus newStatus)
     {
-        if (currentUserId > 0)
+        if (currentUserId <= 0)
+            return;
+
+        var updated = await TaskService.UpdateTaskStatusAsync(taskId, currentUserId, newStatus);
+        if (!updated)
         {
-            await TaskService.UpdateTaskStatusAsync(taskId, currentUserId, newStatus);
-            await LoadTasks();
+            errorMessage = "Unable to update the task status. The task may no longer exist or you may not have permission to change it.";
         }
+        else
+        {
+            errorMessage = null;
+        }
+
+        // Reload so the UI reflects the persisted state (and reverts on failure).
+        await LoadTasks();
     }
 
     private void ShowCreateTaskModal()

@@ -11,10 +11,12 @@ namespace ContosoDashboard.Pages
     public class LoginModel : PageModel
     {
         private readonly IUserService _userService;
+        private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(IUserService userService)
+        public LoginModel(IUserService userService, ILogger<LoginModel> logger)
         {
             _userService = userService;
+            _logger = logger;
         }
 
         public List<User>? Users { get; set; }
@@ -28,14 +30,14 @@ namespace ContosoDashboard.Pages
 
         public async Task<IActionResult> OnPostAsync(int selectedUserId)
         {
-            Console.WriteLine($"Login POST: selectedUserId = {selectedUserId}");
-            
+            _logger.LogDebug("Login POST: selectedUserId = {SelectedUserId}", selectedUserId);
+
             // Reload users for the form in case of error
             Users = await _userService.GetAllUsersAsync();
 
             if (selectedUserId == 0)
             {
-                Console.WriteLine("Login POST: No user selected");
+                _logger.LogInformation("Login POST: no user selected");
                 ErrorMessage = "Please select a user";
                 return Page();
             }
@@ -44,15 +46,15 @@ namespace ContosoDashboard.Pages
 
             if (user == null)
             {
-                Console.WriteLine($"Login POST: User {selectedUserId} not found");
+                _logger.LogWarning("Login POST: user {SelectedUserId} not found", selectedUserId);
                 ErrorMessage = "User not found";
                 return Page();
             }
 
             try
             {
-                Console.WriteLine($"Login POST: Attempting to sign in user {user.DisplayName}");
-                
+                _logger.LogDebug("Login POST: attempting to sign in user {UserId}", user.UserId);
+
                 // Create claims for the authenticated user
                 var claims = new List<Claim>
                 {
@@ -74,8 +76,8 @@ namespace ContosoDashboard.Pages
                     new ClaimsPrincipal(claimsIdentity),
                     authProperties);
 
-                Console.WriteLine($"Login POST: Sign in successful, redirecting to /");
-                
+                _logger.LogInformation("Login POST: sign in successful for user {UserId}", user.UserId);
+
                 // Update last login date
                 user.LastLoginDate = DateTime.UtcNow;
                 await _userService.UpdateUserProfileAsync(user, user.UserId);
@@ -85,9 +87,8 @@ namespace ContosoDashboard.Pages
             }
             catch (Exception ex)
             {
-                // Log the actual error but show generic message to user
-                Console.WriteLine($"Login error: {ex.Message}");
-                Console.WriteLine($"Login error stack: {ex.StackTrace}");
+                // Log the full exception but show a generic message to the user
+                _logger.LogError(ex, "Login failed for user {UserId}", user.UserId);
                 ErrorMessage = "Login failed. Please try again.";
                 return Page();
             }

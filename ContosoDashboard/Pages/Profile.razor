@@ -87,6 +87,12 @@
                                     <i class="bi bi-check-circle"></i> Profile updated successfully!
                                 </span>
                             }
+                            @if (!string.IsNullOrEmpty(errorMessage))
+                            {
+                                <span class="text-danger ms-3">
+                                    <i class="bi bi-exclamation-circle"></i> @errorMessage
+                                </span>
+                            }
                         </EditForm>
                     </div>
                 </div>
@@ -137,6 +143,7 @@
 @code {
     private User? user;
     private bool showSuccessMessage = false;
+    private string? errorMessage;
     private int currentUserId = 0;
 
     protected override async Task OnInitializedAsync()
@@ -158,18 +165,24 @@
 
     private async Task HandleValidSubmit()
     {
-        if (user != null && currentUserId > 0)
+        if (user == null || currentUserId <= 0)
+            return;
+
+        var success = await UserService.UpdateUserProfileAsync(user, currentUserId);
+        if (success)
         {
-            var success = await UserService.UpdateUserProfileAsync(user, currentUserId);
-            if (success)
-            {
-                showSuccessMessage = true;
-                
-                // Hide success message after 3 seconds
-                await Task.Delay(3000);
-                showSuccessMessage = false;
-                StateHasChanged();
-            }
+            errorMessage = null;
+            showSuccessMessage = true;
+
+            // Hide success message after 3 seconds
+            await Task.Delay(3000);
+            showSuccessMessage = false;
+            StateHasChanged();
+        }
+        else
+        {
+            showSuccessMessage = false;
+            errorMessage = "Could not save your profile. Please try again.";
         }
     }
 

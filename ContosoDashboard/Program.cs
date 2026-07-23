@@ -62,6 +62,9 @@ using (var scope = app.Services.CreateScope())
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred creating the database.");
+        // Fail fast: starting the app with an uninitialized database only hides
+        // the real problem behind confusing runtime errors later.
+        throw;
     }
 }
 
