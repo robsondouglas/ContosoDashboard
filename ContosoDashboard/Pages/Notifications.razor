@@ -2,7 +2,6 @@
 @using ContosoDashboard.Services
 @using ContosoDashboard.Models
 @using Microsoft.AspNetCore.Authorization
-@using System.Security.Claims
 @attribute [Authorize]
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -36,13 +35,13 @@
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center mb-1">
                                         <h6 class="mb-0 me-2">@notification.Title</h6>
-                                        <span class="badge bg-@GetPriorityColor(notification.Priority)">
+                                        <span class="badge bg-@DisplayHelpers.GetPriorityColor(notification.Priority)">
                                             @notification.Priority
                                         </span>
                                         <span class="badge bg-secondary ms-2">@notification.Type</span>
                                     </div>
                                     <p class="mb-1">@notification.Message</p>
-                                    <small class="text-muted">@GetRelativeTime(notification.CreatedDate)</small>
+                                    <small class="text-muted">@DisplayHelpers.GetRelativeTime(notification.CreatedDate)</small>
                                 </div>
                                 @if (!notification.IsRead)
                                 {
@@ -85,14 +84,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Get current user ID from authentication claims
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-        {
-            currentUserId = userId;
-        }
+        currentUserId = await AuthenticationStateProvider.GetCurrentUserIdAsync();
 
         if (currentUserId > 0)
         {
@@ -126,30 +118,4 @@
         }
     }
 
-    private string GetPriorityColor(NotificationPriority priority)
-    {
-        return priority switch
-        {
-            NotificationPriority.Urgent => "danger",
-            NotificationPriority.Important => "warning",
-            NotificationPriority.Informational => "info",
-            _ => "secondary"
-        };
-    }
-
-    private string GetRelativeTime(DateTime dateTime)
-    {
-        var timeSpan = DateTime.UtcNow - dateTime;
-
-        if (timeSpan.TotalMinutes < 1)
-            return "Just now";
-        if (timeSpan.TotalMinutes < 60)
-            return $"{(int)timeSpan.TotalMinutes} min ago";
-        if (timeSpan.TotalHours < 24)
-            return $"{(int)timeSpan.TotalHours} hours ago";
-        if (timeSpan.TotalDays < 7)
-            return $"{(int)timeSpan.TotalDays} days ago";
-
-        return dateTime.ToString("MMM dd, yyyy");
-    }
 }

@@ -2,7 +2,6 @@
 @using ContosoDashboard.Services
 @using ContosoDashboard.Models
 @using Microsoft.AspNetCore.Authorization
-@using System.Security.Claims
 @attribute [Authorize]
 @inject IProjectService ProjectService
 @inject NavigationManager NavigationManager
@@ -44,7 +43,7 @@
                             <div class="col-md-3">
                                 <label class="text-muted small">Status</label>
                                 <p>
-                                    <span class="badge bg-@GetStatusColor(project.Status)">
+                                    <span class="badge bg-@DisplayHelpers.GetStatusColor(project.Status)">
                                         @project.Status
                                     </span>
                                 </p>
@@ -125,12 +124,12 @@
                                                 </td>
                                                 <td>@task.AssignedUser.DisplayName</td>
                                                 <td>
-                                                    <span class="badge bg-@GetTaskStatusColor(task.Status)">
+                                                    <span class="badge bg-@DisplayHelpers.GetTaskStatusColor(task.Status)">
                                                         @task.Status
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <span class="badge bg-@GetPriorityColor(task.Priority)">
+                                                    <span class="badge bg-@DisplayHelpers.GetPriorityColor(task.Priority)">
                                                         @task.Priority
                                                     </span>
                                                 </td>
@@ -181,7 +180,7 @@
                                             {
                                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2"
                                                      style="width: 40px; height: 40px; font-size: 16px;">
-                                                    @GetInitials(member.User.DisplayName)
+                                                    @DisplayHelpers.GetInitials(member.User.DisplayName)
                                                 </div>
                                             }
                                             <div class="flex-grow-1">
@@ -241,14 +240,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Get current user ID from authentication claims
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-        {
-            currentUserId = userId;
-        }
+        currentUserId = await AuthenticationStateProvider.GetCurrentUserIdAsync();
 
         if (currentUserId > 0)
         {
@@ -261,48 +253,4 @@
         }
     }
 
-    private string GetStatusColor(ProjectStatus status)
-    {
-        return status switch
-        {
-            ProjectStatus.Planning => "secondary",
-            ProjectStatus.Active => "primary",
-            ProjectStatus.OnHold => "warning",
-            ProjectStatus.Completed => "success",
-            _ => "secondary"
-        };
-    }
-
-    private string GetTaskStatusColor(Models.TaskStatus status)
-    {
-        return status switch
-        {
-            Models.TaskStatus.NotStarted => "secondary",
-            Models.TaskStatus.InProgress => "primary",
-            Models.TaskStatus.Completed => "success",
-            _ => "secondary"
-        };
-    }
-
-    private string GetPriorityColor(TaskPriority priority)
-    {
-        return priority switch
-        {
-            TaskPriority.Low => "secondary",
-            TaskPriority.Medium => "info",
-            TaskPriority.High => "warning",
-            TaskPriority.Critical => "danger",
-            _ => "secondary"
-        };
-    }
-
-    private string GetInitials(string displayName)
-    {
-        var names = displayName.Split(' ');
-        if (names.Length >= 2)
-        {
-            return $"{names[0][0]}{names[1][0]}".ToUpper();
-        }
-        return displayName.Length > 0 ? displayName[0].ToString().ToUpper() : "?";
-    }
 }

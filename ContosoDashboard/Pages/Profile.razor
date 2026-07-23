@@ -2,7 +2,6 @@
 @using ContosoDashboard.Services
 @using ContosoDashboard.Models
 @using Microsoft.AspNetCore.Authorization
-@using System.Security.Claims
 @attribute [Authorize]
 @inject IUserService UserService
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -104,7 +103,7 @@
                             {
                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto" 
                                      style="width: 150px; height: 150px; font-size: 48px;">
-                                    @GetInitials(user.DisplayName)
+                                    @DisplayHelpers.GetInitials(user.DisplayName)
                                 </div>
                             }
                         </div>
@@ -141,14 +140,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Get current user ID from authentication claims
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var authUser = authState.User;
-        var userIdClaim = authUser.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-        {
-            currentUserId = userId;
-        }
+        currentUserId = await AuthenticationStateProvider.GetCurrentUserIdAsync();
 
         if (currentUserId > 0)
         {
@@ -171,17 +163,5 @@
                 StateHasChanged();
             }
         }
-    }
-
-    private string GetInitials(string displayName)
-    {
-        if (string.IsNullOrEmpty(displayName))
-            return "?";
-
-        var parts = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 1)
-            return parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpper();
-
-        return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
     }
 }

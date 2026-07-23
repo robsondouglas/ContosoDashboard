@@ -74,13 +74,7 @@ public class TaskService : ITaskService
 
         if (task == null) return null;
 
-        // Authorization: User can only view tasks they are assigned to, created, or are part of the project
-        var isAssignedUser = task.AssignedUserId == requestingUserId;
-        var isCreator = task.CreatedByUserId == requestingUserId;
-        var isProjectMember = task.Project?.ProjectMembers.Any(pm => pm.UserId == requestingUserId) ?? false;
-        var isProjectManager = task.Project?.ProjectManagerId == requestingUserId;
-
-        if (!isAssignedUser && !isCreator && !isProjectMember && !isProjectManager)
+        if (!task.CanBeAccessedBy(requestingUserId))
         {
             return null; // User not authorized to view this task
         }
@@ -118,13 +112,7 @@ public class TaskService : ITaskService
             
         if (task == null) return false;
 
-        // Authorization: Only assigned user, creator, project manager, or project members can update status
-        var isAssignedUser = task.AssignedUserId == requestingUserId;
-        var isCreator = task.CreatedByUserId == requestingUserId;
-        var isProjectMember = task.Project?.ProjectMembers.Any(pm => pm.UserId == requestingUserId) ?? false;
-        var isProjectManager = task.Project?.ProjectManagerId == requestingUserId;
-
-        if (!isAssignedUser && !isCreator && !isProjectMember && !isProjectManager)
+        if (!task.CanBeAccessedBy(requestingUserId))
         {
             return false; // User not authorized to update this task
         }
@@ -192,13 +180,7 @@ public class TaskService : ITaskService
 
         if (task == null) return new List<TaskComment>();
 
-        // Authorization: User can only view comments if they have access to the task
-        var isAssignedUser = task.AssignedUserId == requestingUserId;
-        var isCreator = task.CreatedByUserId == requestingUserId;
-        var isProjectMember = task.Project?.ProjectMembers.Any(pm => pm.UserId == requestingUserId) ?? false;
-        var isProjectManager = task.Project?.ProjectManagerId == requestingUserId;
-
-        if (!isAssignedUser && !isCreator && !isProjectMember && !isProjectManager)
+        if (!task.CanBeAccessedBy(requestingUserId))
         {
             return new List<TaskComment>(); // User not authorized
         }

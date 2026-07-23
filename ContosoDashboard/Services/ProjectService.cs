@@ -56,11 +56,7 @@ public class ProjectService : IProjectService
 
         if (project == null) return null;
 
-        // Authorization: User must be project manager or a project member
-        var isProjectManager = project.ProjectManagerId == requestingUserId;
-        var isProjectMember = project.ProjectMembers.Any(pm => pm.UserId == requestingUserId);
-
-        if (!isProjectManager && !isProjectMember)
+        if (!project.CanBeAccessedBy(requestingUserId))
         {
             return null; // User not authorized to view this project
         }
@@ -138,11 +134,7 @@ public class ProjectService : IProjectService
 
         if (project == null) return new List<ProjectMember>();
 
-        // Authorization: User must be project manager or member
-        var isProjectManager = project.ProjectManagerId == requestingUserId;
-        var isProjectMember = project.ProjectMembers.Any(pm => pm.UserId == requestingUserId);
-
-        if (!isProjectManager && !isProjectMember)
+        if (!project.CanBeAccessedBy(requestingUserId))
         {
             return new List<ProjectMember>(); // User not authorized
         }

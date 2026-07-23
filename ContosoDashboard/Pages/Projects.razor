@@ -2,7 +2,6 @@
 @using ContosoDashboard.Services
 @using ContosoDashboard.Models
 @using Microsoft.AspNetCore.Authorization
-@using System.Security.Claims
 @attribute [Authorize]
 @inject IProjectService ProjectService
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -42,7 +41,7 @@
 
                             <div class="mb-2">
                                 <small class="text-muted">Status:</small><br />
-                                <span class="badge bg-@GetStatusColor(project.Status)">
+                                <span class="badge bg-@DisplayHelpers.GetStatusColor(project.Status)">
                                     @project.Status
                                 </span>
                             </div>
@@ -95,30 +94,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Get current user ID from authentication claims
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-        {
-            currentUserId = userId;
-        }
+        currentUserId = await AuthenticationStateProvider.GetCurrentUserIdAsync();
 
         if (currentUserId > 0)
         {
             projects = await ProjectService.GetUserProjectsAsync(currentUserId);
         }
-    }
-
-    private string GetStatusColor(ProjectStatus status)
-    {
-        return status switch
-        {
-            ProjectStatus.Planning => "secondary",
-            ProjectStatus.Active => "primary",
-            ProjectStatus.OnHold => "warning",
-            ProjectStatus.Completed => "success",
-            _ => "secondary"
-        };
     }
 }

@@ -2,7 +2,6 @@
 @using ContosoDashboard.Services
 @using ContosoDashboard.Models
 @using Microsoft.AspNetCore.Authorization
-@using System.Security.Claims
 @attribute [Authorize]
 @inject ITaskService TaskService
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -86,7 +85,7 @@
                                 }
                             </td>
                             <td>
-                                <span class="badge bg-@GetPriorityColor(task.Priority)">
+                                <span class="badge bg-@DisplayHelpers.GetPriorityColor(task.Priority)">
                                     @task.Priority
                                 </span>
                             </td>
@@ -143,14 +142,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Get current user ID from authentication claims
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-        {
-            currentUserId = userId;
-        }
+        currentUserId = await AuthenticationStateProvider.GetCurrentUserIdAsync();
 
         if (currentUserId > 0)
         {
@@ -188,17 +180,5 @@
     private void ViewTaskDetails(int taskId)
     {
         // TODO: Navigate to task details or show modal
-    }
-
-    private string GetPriorityColor(TaskPriority priority)
-    {
-        return priority switch
-        {
-            TaskPriority.Critical => "danger",
-            TaskPriority.High => "warning",
-            TaskPriority.Medium => "info",
-            TaskPriority.Low => "secondary",
-            _ => "secondary"
-        };
     }
 }

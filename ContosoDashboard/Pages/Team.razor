@@ -2,7 +2,6 @@
 @using ContosoDashboard.Services
 @using ContosoDashboard.Models
 @using Microsoft.AspNetCore.Authorization
-@using System.Security.Claims
 @attribute [Authorize]
 @inject IUserService UserService
 @inject ITaskService TaskService
@@ -45,7 +44,7 @@
                                 {
                                     <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
                                          style="width: 60px; height: 60px; font-size: 20px;">
-                                        @GetInitials(member.DisplayName)
+                                        @DisplayHelpers.GetInitials(member.DisplayName)
                                     </div>
                                 }
                                 <div>
@@ -56,8 +55,8 @@
 
                             <div class="mb-2">
                                 <small class="text-muted">Status:</small><br />
-                                <span class="badge bg-@GetStatusColor(member.AvailabilityStatus)">
-                                    @GetStatusText(member.AvailabilityStatus)
+                                <span class="badge bg-@DisplayHelpers.GetStatusColor(member.AvailabilityStatus)">
+                                    @DisplayHelpers.GetStatusText(member.AvailabilityStatus)
                                 </span>
                             </div>
 
@@ -102,14 +101,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Get current user ID from authentication claims
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-        {
-            currentUserId = userId;
-        }
+        currentUserId = await AuthenticationStateProvider.GetCurrentUserIdAsync();
 
         if (currentUserId > 0)
         {
@@ -117,39 +109,4 @@
         }
     }
 
-    private string GetInitials(string displayName)
-    {
-        if (string.IsNullOrEmpty(displayName))
-            return "?";
-
-        var parts = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 1)
-            return parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpper();
-
-        return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
-    }
-
-    private string GetStatusColor(AvailabilityStatus status)
-    {
-        return status switch
-        {
-            AvailabilityStatus.Available => "success",
-            AvailabilityStatus.Busy => "danger",
-            AvailabilityStatus.InMeeting => "warning",
-            AvailabilityStatus.OutOfOffice => "secondary",
-            _ => "secondary"
-        };
-    }
-
-    private string GetStatusText(AvailabilityStatus status)
-    {
-        return status switch
-        {
-            AvailabilityStatus.Available => "Available",
-            AvailabilityStatus.Busy => "Busy",
-            AvailabilityStatus.InMeeting => "In Meeting",
-            AvailabilityStatus.OutOfOffice => "Out of Office",
-            _ => "Unknown"
-        };
-    }
 }

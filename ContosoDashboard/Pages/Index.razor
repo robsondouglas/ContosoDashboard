@@ -105,7 +105,7 @@
                         <div class="list-group-item @(!notification.IsRead ? "bg-light" : "")">
                             <div class="d-flex w-100 justify-content-between">
                                 <h6 class="mb-1">@notification.Title</h6>
-                                <small>@GetRelativeTime(notification.CreatedDate)</small>
+                                <small>@DisplayHelpers.GetRelativeTime(notification.CreatedDate)</small>
                             </div>
                             <p class="mb-1">@notification.Message</p>
                         </div>
@@ -133,13 +133,7 @@
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
         userName = user.Identity?.Name ?? "User";
-
-        // Get user ID from claims
-        var userIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-        {
-            currentUserId = userId;
-        }
+        currentUserId = user.GetUserId();
 
         if (currentUserId > 0)
         {
@@ -147,21 +141,5 @@
             announcements = await DashboardService.GetActiveAnnouncementsAsync();
             recentNotifications = await NotificationService.GetUserNotificationsAsync(currentUserId);
         }
-    }
-
-    private string GetRelativeTime(DateTime dateTime)
-    {
-        var timeSpan = DateTime.UtcNow - dateTime;
-
-        if (timeSpan.TotalMinutes < 1)
-            return "Just now";
-        if (timeSpan.TotalMinutes < 60)
-            return $"{(int)timeSpan.TotalMinutes} min ago";
-        if (timeSpan.TotalHours < 24)
-            return $"{(int)timeSpan.TotalHours} hours ago";
-        if (timeSpan.TotalDays < 7)
-            return $"{(int)timeSpan.TotalDays} days ago";
-
-        return dateTime.ToString("MMM dd, yyyy");
     }
 }
