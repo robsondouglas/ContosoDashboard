@@ -1,0 +1,11 @@
+{
+    "name": "ContosoDashboard",
+    "image": "mcr.microsoft.com/devcontainers/dotnet:10.0",
+    "containerEnv": {
+        "SSL_CERT_FILE": "./.devcontainer/corp-ca-bundle.crt",
+        "REQUESTS_CA_BUNDLE": "./.devcontainer/corp-ca-bundle.crt",
+        "NODE_EXTRA_CA_CERTS": "./.devcontainer/corp-ca-bundle.crt"
+    },
+    "runArgs": ["--net", "spec-kit-net"],
+    "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && uv tool install specify-cli"
+}
